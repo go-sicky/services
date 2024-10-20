@@ -22,22 +22,13 @@
  */
 
 /**
- * @file main.go
+ * @file config.go
  * @package main
  * @author Dr.NP <np@herewe.tech>
- * @since 09/18/2024
+ * @since 10/21/2024
  */
 
 package main
-
-const (
-	AppName = "svc.sicky.setting"
-	Version = "latest"
-)
-
-func main() {
-
-}
 
 /*
  * Local variables:
