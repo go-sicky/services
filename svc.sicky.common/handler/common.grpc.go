@@ -61,8 +61,12 @@ func (h *GRPCCommon) Register(srv *grpc.Server) {
 }
 
 /* {{{ [Methods] */
-func (h *GRPCCommon) Health(ctx context.Context, i *emptypb.Empty) (*proto.HealthResp, error) {
-	return nil, nil
+func (h *GRPCCommon) Health(ctx context.Context, req *emptypb.Empty) (*proto.HealthResp, error) {
+	resp := &proto.HealthResp{
+		Status: "OK",
+	}
+
+	return resp, nil
 }
 
 /* }}} */
