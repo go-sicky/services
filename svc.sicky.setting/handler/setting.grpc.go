@@ -22,53 +22,42 @@
  */
 
 /**
- * @file common.grpc.go
+ * @file setting.grpc.go
  * @package handler
  * @author Dr.NP <np@herewe.tech>
- * @since 10/21/2024
+ * @since 11/20/2024
  */
 
 package handler
 
 import (
-	"context"
-
-	"github.com/go-sicky/services/svc.sicky.common/proto"
+	"github.com/go-sicky/services/svc.sicky.setting/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type GRPCCommon struct {
-	proto.UnsafeCommonServer
+type GRPCSetting struct {
+	proto.UnimplementedSettingServer
 }
 
-func NewGRPCCommon() *GRPCCommon {
-	h := &GRPCCommon{}
+func NewGRPCSetting() *GRPCSetting {
+	h := &GRPCSetting{}
 
 	return h
 }
 
-func (h *GRPCCommon) Name() string {
-	return "grpc.common"
+func (h *GRPCSetting) Name() string {
+	return "grpc.setting"
 }
 
-func (h *GRPCCommon) Type() string {
+func (h *GRPCSetting) Type() string {
 	return "grpc"
 }
 
-func (h *GRPCCommon) Register(app *grpc.Server) {
-	proto.RegisterCommonServer(app, h)
+func (h *GRPCSetting) Register(app *grpc.Server) {
+	proto.RegisterSettingServer(app, h)
 }
 
-/* {{{ [Methods] */
-func (h *GRPCCommon) Health(ctx context.Context, req *emptypb.Empty) (*proto.HealthResp, error) {
-	resp := &proto.HealthResp{
-		Status: "OK",
-	}
-
-	return resp, nil
-}
-
+/* {{{ [Method] */
 /* }}} */
 
 /*

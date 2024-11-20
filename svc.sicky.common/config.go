@@ -30,6 +30,30 @@
 
 package main
 
+import (
+	brkNats "github.com/go-sicky/sicky/broker/nats"
+	rgConsul "github.com/go-sicky/sicky/registry/consul"
+	srvGRPC "github.com/go-sicky/sicky/server/grpc"
+	"github.com/go-sicky/sicky/service/sicky"
+)
+
+type ConfigDef struct {
+	Server struct {
+		GRPC *srvGRPC.Config `json:"grpc" yaml:"grpc" mapstructure:"grpc"`
+	} `json:"server" yaml:"server" mapstructure:"server"`
+	Broker struct {
+		Nats *brkNats.Config `json:"nats" yaml:"nats" mapstructure:"nats"`
+	} `json:"broker" yaml:"broker" mapstructure:"broker"`
+	Registry struct {
+		Consul *rgConsul.Config `json:"consul" yaml:"consul" mapstructure:"consul"`
+	} `json:"registry" yaml:"registry" mapstructure:"registry"`
+	Service *sicky.Config `json:"service" yaml:"service" mapstructure:"service"`
+}
+
+var (
+	config ConfigDef
+)
+
 /*
  * Local variables:
  * tab-width: 4

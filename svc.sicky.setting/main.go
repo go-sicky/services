@@ -30,13 +30,48 @@
 
 package main
 
+import (
+	"github.com/go-sicky/services/svc.sicky.setting/handler"
+	brkNats "github.com/go-sicky/sicky/broker/nats"
+	"github.com/go-sicky/sicky/logger"
+	rgConsul "github.com/go-sicky/sicky/registry/consul"
+	"github.com/go-sicky/sicky/runtime"
+	"github.com/go-sicky/sicky/server"
+	srvGRPC "github.com/go-sicky/sicky/server/grpc"
+	"github.com/go-sicky/sicky/service"
+	"github.com/go-sicky/sicky/service/sicky"
+)
+
 const (
 	AppName = "svc.sicky.setting"
 	Version = "latest"
 )
 
 func main() {
+	// Runtime
+	runtime.Init(AppName)
+	runtime.Config.Unmarshal(&config)
 
+	// Logger
+	logger.Logger.Level(logger.DebugLevel)
+
+	// GRPC server
+	grpcSrv := srvGRPC.New(&server.Options{Name: AppName + "@grpc"}, config.Server.GRPC)
+	grpcSrv.Handle(handler.NewGRPCSetting())
+
+	// Broker
+	brkNats := brkNats.New(nil, config.Broker.Nats)
+
+	// Registry
+	rgConsul := rgConsul.New(nil, config.Registry.Consul)
+
+	// Service
+	svc := sicky.New(&service.Options{Name: AppName}, config.Service)
+	svc.Servers(grpcSrv)
+	svc.Brokers(brkNats)
+	svc.Registries(rgConsul)
+
+	service.Run()
 }
 
 /*
