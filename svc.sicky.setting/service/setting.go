@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 HereweTech Co.LTD
+ * Copyright (c) 2024 HereweTech Co.LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -21,17 +21,32 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-syntax = "proto3";
+/**
+ * @file setting.go
+ * @package service
+ * @author Dr.NP <np@herewe.tech>
+ * @since 11/20/2024
+ */
 
-package svc.sicky.setting;
-option go_package="./proto;proto";
+package service
 
-import "google/protobuf/empty.proto";
+import (
+	"context"
 
-service Setting {
-    rpc InitDB(google.protobuf.Empty) returns (InitDBResp);
-};
+	"github.com/go-sicky/services/svc.sicky.setting/model"
+)
 
-message InitDBResp {
-    bool result = 1;
-};
+type Setting struct{}
+
+func (s *Setting) InitDB(ctx context.Context) error {
+	return model.InitSetting(ctx, false)
+}
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */

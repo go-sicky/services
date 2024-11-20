@@ -29,7 +29,11 @@
 package proto
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -37,10 +41,15 @@ import (
 // Requires gRPC-Go v1.64.0 or later.
 const _ = grpc.SupportPackageIsVersion9
 
+const (
+	Setting_InitDB_FullMethodName = "/svc.sicky.setting.Setting/InitDB"
+)
+
 // SettingClient is the client API for Setting service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SettingClient interface {
+	InitDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*InitDBResp, error)
 }
 
 type settingClient struct {
@@ -51,10 +60,21 @@ func NewSettingClient(cc grpc.ClientConnInterface) SettingClient {
 	return &settingClient{cc}
 }
 
+func (c *settingClient) InitDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*InitDBResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InitDBResp)
+	err := c.cc.Invoke(ctx, Setting_InitDB_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SettingServer is the server API for Setting service.
 // All implementations must embed UnimplementedSettingServer
 // for forward compatibility.
 type SettingServer interface {
+	InitDB(context.Context, *emptypb.Empty) (*InitDBResp, error)
 	mustEmbedUnimplementedSettingServer()
 }
 
@@ -65,6 +85,9 @@ type SettingServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSettingServer struct{}
 
+func (UnimplementedSettingServer) InitDB(context.Context, *emptypb.Empty) (*InitDBResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InitDB not implemented")
+}
 func (UnimplementedSettingServer) mustEmbedUnimplementedSettingServer() {}
 func (UnimplementedSettingServer) testEmbeddedByValue()                 {}
 
@@ -86,13 +109,36 @@ func RegisterSettingServer(s grpc.ServiceRegistrar, srv SettingServer) {
 	s.RegisterService(&Setting_ServiceDesc, srv)
 }
 
+func _Setting_InitDB_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SettingServer).InitDB(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Setting_InitDB_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SettingServer).InitDB(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Setting_ServiceDesc is the grpc.ServiceDesc for Setting service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Setting_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "svc.sicky.setting.Setting",
 	HandlerType: (*SettingServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "proto/setting.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "InitDB",
+			Handler:    _Setting_InitDB_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/setting.proto",
 }

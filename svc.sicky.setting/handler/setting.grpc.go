@@ -31,16 +31,25 @@
 package handler
 
 import (
+	"context"
+	"errors"
+
 	"github.com/go-sicky/services/svc.sicky.setting/proto"
+	"github.com/go-sicky/services/svc.sicky.setting/service"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type GRPCSetting struct {
 	proto.UnimplementedSettingServer
+
+	svcSetting *service.Setting
 }
 
 func NewGRPCSetting() *GRPCSetting {
-	h := &GRPCSetting{}
+	h := &GRPCSetting{
+		svcSetting: new(service.Setting),
+	}
 
 	return h
 }
@@ -58,6 +67,24 @@ func (h *GRPCSetting) Register(app *grpc.Server) {
 }
 
 /* {{{ [Method] */
+func (h *GRPCSetting) InitDB(ctx context.Context, e *emptypb.Empty) (*proto.InitDBResp, error) {
+	var errs, err error
+	err = h.svcSetting.InitDB(ctx)
+	if err != nil {
+		errs = errors.Join(errs, err)
+	}
+
+	resp := &proto.InitDBResp{
+		Result: true,
+	}
+
+	if errs != nil {
+		resp.Result = false
+	}
+
+	return resp, errs
+}
+
 /* }}} */
 
 /*
