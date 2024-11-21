@@ -31,7 +31,7 @@
 package main
 
 import (
-	"github.com/go-sicky/services/svc.sicky.setting/handler"
+	"github.com/go-sicky/services/svc.sicky.list/handler"
 	brkNats "github.com/go-sicky/sicky/broker/nats"
 	"github.com/go-sicky/sicky/driver"
 	"github.com/go-sicky/sicky/logger"
@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	AppName = "svc.sicky.setting"
+	AppName = "svc.sicky.list"
 	Version = "latest"
 )
 
@@ -62,7 +62,7 @@ func main() {
 
 	// GRPC server
 	grpcSrv := srvGRPC.New(&server.Options{Name: AppName + "@grpc"}, config.Server.GRPC)
-	grpcSrv.Handle(handler.NewGRPCSetting())
+	grpcSrv.Handle(handler.NewGRPCList())
 
 	// Broker
 	brkNats := brkNats.New(nil, config.Broker.Nats)

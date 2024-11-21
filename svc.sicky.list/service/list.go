@@ -22,61 +22,24 @@
  */
 
 /**
- * @file main.go
- * @package main
+ * @file list.go
+ * @package service
  * @author Dr.NP <np@herewe.tech>
- * @since 09/18/2024
+ * @since 11/21/2024
  */
 
-package main
+package service
 
 import (
-	"github.com/go-sicky/services/svc.sicky.setting/handler"
-	brkNats "github.com/go-sicky/sicky/broker/nats"
-	"github.com/go-sicky/sicky/driver"
-	"github.com/go-sicky/sicky/logger"
-	rgConsul "github.com/go-sicky/sicky/registry/consul"
-	"github.com/go-sicky/sicky/runtime"
-	"github.com/go-sicky/sicky/server"
-	srvGRPC "github.com/go-sicky/sicky/server/grpc"
-	"github.com/go-sicky/sicky/service"
-	"github.com/go-sicky/sicky/service/sicky"
+	"context"
+
+	"github.com/go-sicky/services/svc.sicky.list/model"
 )
 
-const (
-	AppName = "svc.sicky.setting"
-	Version = "latest"
-)
+type List struct{}
 
-func main() {
-	// Runtime
-	runtime.Init(AppName)
-	runtime.Config.Unmarshal(&config)
-
-	// Logger
-	logger.Logger.Level(logger.DebugLevel)
-
-	// Drivers
-	driver.InitDB(config.Driver.DB)
-	driver.InitRedis(config.Driver.Redis)
-
-	// GRPC server
-	grpcSrv := srvGRPC.New(&server.Options{Name: AppName + "@grpc"}, config.Server.GRPC)
-	grpcSrv.Handle(handler.NewGRPCSetting())
-
-	// Broker
-	brkNats := brkNats.New(nil, config.Broker.Nats)
-
-	// Registry
-	rgConsul := rgConsul.New(nil, config.Registry.Consul)
-
-	// Service
-	svc := sicky.New(&service.Options{Name: AppName}, config.Service)
-	svc.Servers(grpcSrv)
-	svc.Brokers(brkNats)
-	svc.Registries(rgConsul)
-
-	service.Run()
+func (s *List) InitDB(ctx context.Context) error {
+	return model.InitList(ctx, false)
 }
 
 /*

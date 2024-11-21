@@ -25,7 +25,7 @@
  * @file setting.grpc.go
  * @package handler
  * @author Dr.NP <np@herewe.tech>
- * @since 11/20/2024
+ * @since 11/21/2024
  */
 
 package handler
@@ -34,42 +34,42 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-sicky/services/svc.sicky.setting/proto"
-	"github.com/go-sicky/services/svc.sicky.setting/service"
+	"github.com/go-sicky/services/svc.sicky.list/proto"
+	"github.com/go-sicky/services/svc.sicky.list/service"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type GRPCSetting struct {
-	proto.UnimplementedSettingServer
+type GRPCList struct {
+	proto.UnimplementedListServer
 
-	svcSetting *service.Setting
+	svcList *service.List
 }
 
-func NewGRPCSetting() *GRPCSetting {
-	h := &GRPCSetting{
-		svcSetting: new(service.Setting),
+func NewGRPCList() *GRPCList {
+	h := &GRPCList{
+		svcList: new(service.List),
 	}
 
 	return h
 }
 
-func (h *GRPCSetting) Name() string {
-	return "grpc.setting"
+func (h *GRPCList) Name() string {
+	return "grpc.list"
 }
 
-func (h *GRPCSetting) Type() string {
+func (h *GRPCList) Type() string {
 	return "grpc"
 }
 
-func (h *GRPCSetting) Register(app *grpc.Server) {
-	proto.RegisterSettingServer(app, h)
+func (h *GRPCList) Register(app *grpc.Server) {
+	proto.RegisterListServer(app, h)
 }
 
 /* {{{ [Method] */
-func (h *GRPCSetting) InitDB(ctx context.Context, e *emptypb.Empty) (*proto.InitDBResp, error) {
+func (h *GRPCList) InitDB(ctx context.Context, e *emptypb.Empty) (*proto.InitDBResp, error) {
 	var errs, err error
-	err = h.svcSetting.InitDB(ctx)
+	err = h.svcList.InitDB(ctx)
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
@@ -85,15 +85,31 @@ func (h *GRPCSetting) InitDB(ctx context.Context, e *emptypb.Empty) (*proto.Init
 	return resp, errs
 }
 
-func (h *GRPCSetting) Set(ctx context.Context, req *proto.SetReq) (*proto.SetResp, error) {
+func (h *GRPCList) Add(ctx context.Context, req *proto.AddReq) (*proto.AddResp, error) {
 	return nil, nil
 }
 
-func (h *GRPCSetting) Get(ctx context.Context, req *proto.GetReq) (*proto.GetResp, error) {
+func (h *GRPCList) Get(ctx context.Context, req *proto.GetReq) (*proto.GetResp, error) {
 	return nil, nil
 }
 
-func (h *GRPCSetting) Delete(ctx context.Context, req *proto.DeleteReq) (*proto.DeleteResp, error) {
+func (h *GRPCList) Set(ctx context.Context, req *proto.SetReq) (*proto.SetResp, error) {
+	return nil, nil
+}
+
+func (h *GRPCList) All(ctx context.Context, req *proto.AllReq) (*proto.AllResp, error) {
+	return nil, nil
+}
+
+func (h *GRPCList) Count(ctx context.Context, req *proto.CountReq) (*proto.CountResp, error) {
+	return nil, nil
+}
+
+func (h *GRPCList) Delete(ctx context.Context, req *proto.DeleteReq) (*proto.DeleteResp, error) {
+	return nil, nil
+}
+
+func (h *GRPCList) Purge(ctx context.Context, req *proto.PurgeReq) (*proto.PurgeResp, error) {
 	return nil, nil
 }
 
