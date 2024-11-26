@@ -36,6 +36,8 @@ import (
 
 	"github.com/go-sicky/services/svc.sicky.setting/proto"
 	"github.com/go-sicky/services/svc.sicky.setting/service"
+	"github.com/go-sicky/sicky/logger"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -86,15 +88,66 @@ func (h *GRPCSetting) InitDB(ctx context.Context, e *emptypb.Empty) (*proto.Init
 }
 
 func (h *GRPCSetting) Set(ctx context.Context, req *proto.SetReq) (*proto.SetResp, error) {
-	return nil, nil
+	s, err := h.svcSetting.Set(ctx, req.Setting)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "Setting.Set failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	resp := &proto.SetResp{
+		Id: s.Id,
+	}
+
+	return resp, err
 }
 
 func (h *GRPCSetting) Get(ctx context.Context, req *proto.GetReq) (*proto.GetResp, error) {
-	return nil, nil
+	var (
+		s   *proto.SettingDef
+		err error
+	)
+
+	if uuid.Validate(req.Id) == nil {
+		id := uuid.MustParse(req.Id)
+		s, err = h.svcSetting.GetByID(ctx, id)
+	} else if req.Key != "" {
+		s, err = h.svcSetting.GetByKey(ctx, req.Key)
+	}
+
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "Setting.Get failed", "error", err.Error())
+	}
+
+	resp := &proto.GetResp{
+		Setting: s,
+	}
+
+	return resp, err
 }
 
 func (h *GRPCSetting) Delete(ctx context.Context, req *proto.DeleteReq) (*proto.DeleteResp, error) {
-	return nil, nil
+	var (
+		ret bool
+		err error
+	)
+
+	if uuid.Validate(req.Id) == nil {
+		id := uuid.MustParse(req.Id)
+		ret, err = h.svcSetting.DeleteByID(ctx, id)
+	} else if req.Key != "" {
+		ret, err = h.svcSetting.DeleteByKey(ctx, req.Key)
+	}
+
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "Setting.Delete failed", "error", err.Error())
+	}
+
+	resp := &proto.DeleteResp{
+		Deleted: ret,
+	}
+
+	return resp, err
 }
 
 /* }}} */

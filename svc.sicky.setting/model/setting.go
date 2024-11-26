@@ -32,6 +32,9 @@ package model
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/go-sicky/sicky/driver"
@@ -41,13 +44,81 @@ import (
 )
 
 type Setting struct {
-	bun.BaseModel `bun:"table:setting"`
+	bun.BaseModel `bun:"table:sicky_setting"`
 
-	ID uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	ID     uuid.UUID       `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	Key    string          `bun:"key,notnull" json:"key"`
+	Value  json.RawMessage `bun:"value,type:jsonb" json:"value"`
+	Raw    bool            `bun:"raw" json:"raw"`
+	Status int64           `bun:"status" json:"status"`
 
 	CreatedAt time.Time `bun:"created_at,nullzero,notnull,default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at,nullzero,notnull,default:CURRENT_TIMESTAMP" json:"updated_at"`
-	DeletedAt time.Time `bun:"deleted_at,soft_delete,nullzero" json:"-"`
+}
+
+func (m *Setting) Set(ctx context.Context) error {
+	iq := driver.DB.NewInsert().Model(m).
+		On("CONFLICT (key) DO UPDATE").
+		Set("value = COALESCE(EXCLUDED.value, setting.value), raw = COALESCE(EXCLUDED.raw, setting.raw), status = COALESCE(EXCLUDED.status, setting.status), updated_at = CURRENT_TIMESTAMP")
+
+	_, err := iq.Returning("*").Exec(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "setting upsert failed", "error", err.Error())
+	}
+
+	return err
+}
+
+func (m *Setting) Get(ctx context.Context) error {
+	sq := driver.DB.NewSelect().Model((*Setting)(nil))
+	if m.ID != uuid.Nil {
+		sq = sq.Where("id = ?", m.ID)
+	}
+
+	if m.Key != "" {
+		sq = sq.Where("key = ?", m.Key)
+	}
+
+	err := sq.Scan(ctx, m)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No rows
+			logger.Logger.WarnContext(ctx, "setting get no records")
+			m.ID = uuid.Nil
+			m.Key = ""
+
+			return nil
+		} else {
+			logger.Logger.ErrorContext(ctx, "setting get failed", "error", err.Error())
+		}
+	}
+
+	return err
+}
+
+func (m *Setting) Delete(ctx context.Context) error {
+	dq := driver.DB.NewDelete().Model((*Setting)(nil))
+	if m.ID != uuid.Nil {
+		dq = dq.Where("id = ?", m.ID)
+	}
+
+	if m.Key != "" {
+		dq = dq.Where("key = ?", m.Key)
+	}
+
+	ret, err := dq.Exec(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "setting delete failed", "error", err.Error())
+	}
+
+	a, _ := ret.RowsAffected()
+	if a > 0 {
+		m.Raw = true
+	} else {
+		m.Raw = false
+	}
+
+	return err
 }
 
 func InitSetting(ctx context.Context, dropTable bool) error {
@@ -72,7 +143,7 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 	// Indexes
 	_, err = driver.DB.NewCreateIndex().
 		Model((*Setting)(nil)).
-		Index("idx_setting_crated_at").
+		Index("idx_sicky_setting_crated_at").
 		Column("created_at").Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, err.Error())
@@ -82,7 +153,7 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 
 	_, err = driver.DB.NewCreateIndex().
 		Model((*Setting)(nil)).
-		Index("idx_setting_updated_at").
+		Index("idx_sicky_setting_updated_at").
 		Column("updated_at").Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, err.Error())
@@ -90,10 +161,26 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 		return err
 	}
 
+	// Unique
 	_, err = driver.DB.NewCreateIndex().
 		Model((*Setting)(nil)).
-		Index("idx_setting_deleted_at").
-		Column("deleted_at").Exec(ctx)
+		Unique().
+		Index("unq_sicky_setting_key").
+		Column("key").
+		Exec(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, err.Error())
+
+		return err
+	}
+
+	// Gin
+	_, err = driver.DB.NewCreateIndex().
+		Model((*Setting)(nil)).
+		Using("gin").
+		Index("gin_sicky_setting_value").
+		Column("value").
+		Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, err.Error())
 

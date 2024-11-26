@@ -32,14 +32,122 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-sicky/services/svc.sicky.setting/model"
+	"github.com/go-sicky/services/svc.sicky.setting/proto"
+	"github.com/google/uuid"
 )
 
 type Setting struct{}
 
+type RawValue struct {
+	Raw string `json:"raw"`
+}
+
 func (s *Setting) InitDB(ctx context.Context) error {
 	return model.InitSetting(ctx, false)
+}
+
+func (s *Setting) Set(ctx context.Context, item *proto.SettingDef) (*proto.SettingDef, error) {
+	m := &model.Setting{
+		Key:    item.Key,
+		Raw:    item.Raw,
+		Status: item.Status,
+	}
+
+	if !item.Raw {
+		if json.Valid([]byte(item.Value)) {
+			m.Value = json.RawMessage(item.Value)
+		}
+	} else {
+		v := RawValue{
+			Raw: item.Value,
+		}
+		m.Value, _ = json.Marshal(v)
+	}
+
+	err := m.Set(ctx)
+	ret := &proto.SettingDef{
+		Id:  m.ID.String(),
+		Key: m.Key,
+	}
+
+	return ret, err
+}
+
+func (s *Setting) GetByID(ctx context.Context, id uuid.UUID) (*proto.SettingDef, error) {
+	m := &model.Setting{
+		ID: id,
+	}
+
+	err := m.Get(ctx)
+	if m.ID == uuid.Nil {
+		return nil, err
+	}
+
+	ret := &proto.SettingDef{
+		Id:     m.ID.String(),
+		Key:    m.Key,
+		Raw:    m.Raw,
+		Status: m.Status,
+	}
+	if m.Raw {
+		v := RawValue{}
+		json.Unmarshal(m.Value, &v)
+		ret.Value = v.Raw
+	} else {
+		ret.Value = string(m.Value)
+	}
+
+	return ret, err
+}
+
+func (s *Setting) GetByKey(ctx context.Context, key string) (*proto.SettingDef, error) {
+	m := &model.Setting{
+		Key: key,
+	}
+
+	err := m.Get(ctx)
+	if m.Key == "" {
+		return nil, err
+	}
+
+	ret := &proto.SettingDef{
+		Id:     m.ID.String(),
+		Key:    m.Key,
+		Raw:    m.Raw,
+		Status: m.Status,
+	}
+	if m.Raw {
+		v := RawValue{}
+		json.Unmarshal(m.Value, &v)
+		ret.Value = v.Raw
+	} else {
+		ret.Value = string(m.Value)
+	}
+
+	return ret, err
+}
+
+func (s *Setting) DeleteByID(ctx context.Context, id uuid.UUID) (bool, error) {
+	m := &model.Setting{
+		ID: id,
+	}
+
+	err := m.Delete(ctx)
+
+	return m.Raw, err
+}
+
+func (s *Setting) DeleteByKey(ctx context.Context, key string) (bool, error) {
+	m := &model.Setting{
+		Key: key,
+	}
+
+	err := m.Delete(ctx)
+
+	return m.Raw, err
 }
 
 /*

@@ -39,12 +39,15 @@ service Setting {
 
 message InitDBResp { bool result = 1; };
 
-message SetReq {
-  string key = 1;
-  string value = 2;
-  string id = 127;
-  bool is_json = 128;
+message SettingDef {
+  string id = 1;
+  string key = 2;
+  string value = 3;
+  bool raw = 4;
+  int64 status = 5;
 };
+
+message SetReq { SettingDef setting = 1; };
 message SetResp {
   string id = 127;
   bool is_new = 128;
@@ -54,12 +57,7 @@ message GetReq {
   string key = 1;
   string id = 127;
 };
-message GetResp {
-  string key = 1;
-  string value = 2;
-  string id = 127;
-  bool is_json = 128;
-};
+message GetResp { SettingDef setting = 1; };
 
 message DeleteReq {
   string key = 1;

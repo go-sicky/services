@@ -32,6 +32,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/go-sicky/sicky/driver"
@@ -43,7 +44,12 @@ import (
 type Setting struct {
 	bun.BaseModel `bun:"table:list"`
 
-	ID uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	ID        uuid.UUID       `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	Key       string          `bun:"key,notnull" json:"key"`
+	RawValue  []byte          `bun:"raw_value" json:"raw_value"`
+	JsonValue json.RawMessage `bun:"json_value" json:"json_value"`
+	IsJson    bool            `bun:"is_json" json:"is_json"`
+	Status    int64           `bun:"status" json:"status"`
 
 	CreatedAt time.Time `bun:"created_at,nullzero,notnull,default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at,nullzero,notnull,default:CURRENT_TIMESTAMP" json:"updated_at"`
@@ -94,6 +100,16 @@ func InitList(ctx context.Context, dropTable bool) error {
 		Model((*Setting)(nil)).
 		Index("idx_list_deleted_at").
 		Column("deleted_at").Exec(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, err.Error())
+
+		return err
+	}
+
+	_, err = driver.DB.NewCreateIndex().
+		Model((*Setting)(nil)).
+		Index("idx_list_key").
+		Column("key").Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, err.Error())
 
