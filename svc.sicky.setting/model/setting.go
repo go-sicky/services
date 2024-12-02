@@ -44,7 +44,7 @@ import (
 )
 
 type Setting struct {
-	bun.BaseModel `bun:"table:sicky_setting"`
+	bun.BaseModel `bun:"table:sicky.setting"`
 
 	ID     uuid.UUID       `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
 	Key    string          `bun:"key,notnull" json:"key"`
@@ -186,6 +186,8 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 
 		return err
 	}
+
+	logger.Logger.InfoContext(ctx, "table <sicky.setting> initialized")
 
 	return err
 }

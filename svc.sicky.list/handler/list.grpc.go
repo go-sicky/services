@@ -36,6 +36,8 @@ import (
 
 	"github.com/go-sicky/services/svc.sicky.list/proto"
 	"github.com/go-sicky/services/svc.sicky.list/service"
+	"github.com/go-sicky/sicky/logger"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -86,31 +88,133 @@ func (h *GRPCList) InitDB(ctx context.Context, e *emptypb.Empty) (*proto.InitDBR
 }
 
 func (h *GRPCList) Add(ctx context.Context, req *proto.AddReq) (*proto.AddResp, error) {
-	return nil, nil
+	s, err := h.svcList.Add(ctx, req.Item)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "List.Add failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	resp := &proto.AddResp{
+		Id: s.Id,
+	}
+
+	return resp, nil
 }
 
 func (h *GRPCList) Get(ctx context.Context, req *proto.GetReq) (*proto.GetResp, error) {
-	return nil, nil
+	if uuid.Validate(req.Id) != nil {
+		return nil, errors.New("invalid list item ID")
+	}
+
+	id := uuid.MustParse(req.Id)
+	s, err := h.svcList.Get(ctx, id)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "List.Get failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	resp := &proto.GetResp{
+		Item: s,
+	}
+
+	return resp, nil
 }
 
 func (h *GRPCList) Set(ctx context.Context, req *proto.SetReq) (*proto.SetResp, error) {
-	return nil, nil
-}
+	set, err := h.svcList.Set(ctx, req.Item)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "List.Set failed", "error", err.Error())
 
-func (h *GRPCList) All(ctx context.Context, req *proto.AllReq) (*proto.AllResp, error) {
-	return nil, nil
-}
+		return nil, err
+	}
 
-func (h *GRPCList) Count(ctx context.Context, req *proto.CountReq) (*proto.CountResp, error) {
-	return nil, nil
+	resp := &proto.SetResp{
+		Set: set,
+	}
+
+	return resp, nil
 }
 
 func (h *GRPCList) Delete(ctx context.Context, req *proto.DeleteReq) (*proto.DeleteResp, error) {
-	return nil, nil
+	if uuid.Validate(req.Id) != nil {
+		return nil, errors.New("invalid list item ID")
+	}
+
+	id := uuid.MustParse(req.Id)
+	deleted, err := h.svcList.Delete(ctx, id)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "List.Delete failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	resp := &proto.DeleteResp{
+		Deleted: deleted,
+	}
+
+	return resp, nil
+}
+
+func (h *GRPCList) List(ctx context.Context, req *proto.ListReq) (*proto.ListResp, error) {
+	items, err := h.svcList.List(ctx, req.Key, req.Offset, req.Limit)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "List.List failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	resp := &proto.ListResp{
+		Items: items,
+	}
+
+	return resp, nil
+}
+
+func (h *GRPCList) All(ctx context.Context, req *proto.AllReq) (*proto.AllResp, error) {
+	items, err := h.svcList.All(ctx, req.Key)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "List.All failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	resp := &proto.AllResp{
+		Items: items,
+	}
+
+	return resp, nil
+}
+
+func (h *GRPCList) Count(ctx context.Context, req *proto.CountReq) (*proto.CountResp, error) {
+	c, err := h.svcList.Count(ctx, req.Key)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "List.Count failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	resp := &proto.CountResp{
+		Count: c,
+	}
+
+	return resp, nil
 }
 
 func (h *GRPCList) Purge(ctx context.Context, req *proto.PurgeReq) (*proto.PurgeResp, error) {
-	return nil, nil
+	purged, err := h.svcList.Purge(ctx, req.Key)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "List.Purge failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	resp := &proto.PurgeResp{
+		Purged: purged,
+	}
+
+	return resp, nil
 }
 
 /* }}} */

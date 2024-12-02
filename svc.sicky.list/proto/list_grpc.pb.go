@@ -47,9 +47,10 @@ const (
 	List_Add_FullMethodName    = "/svc.sicky.list.List/Add"
 	List_Get_FullMethodName    = "/svc.sicky.list.List/Get"
 	List_Set_FullMethodName    = "/svc.sicky.list.List/Set"
+	List_Delete_FullMethodName = "/svc.sicky.list.List/Delete"
+	List_List_FullMethodName   = "/svc.sicky.list.List/List"
 	List_All_FullMethodName    = "/svc.sicky.list.List/All"
 	List_Count_FullMethodName  = "/svc.sicky.list.List/Count"
-	List_Delete_FullMethodName = "/svc.sicky.list.List/Delete"
 	List_Purge_FullMethodName  = "/svc.sicky.list.List/Purge"
 )
 
@@ -61,9 +62,10 @@ type ListClient interface {
 	Add(ctx context.Context, in *AddReq, opts ...grpc.CallOption) (*AddResp, error)
 	Get(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetResp, error)
 	Set(ctx context.Context, in *SetReq, opts ...grpc.CallOption) (*SetResp, error)
+	Delete(ctx context.Context, in *DeleteReq, opts ...grpc.CallOption) (*DeleteResp, error)
+	List(ctx context.Context, in *ListReq, opts ...grpc.CallOption) (*ListResp, error)
 	All(ctx context.Context, in *AllReq, opts ...grpc.CallOption) (*AllResp, error)
 	Count(ctx context.Context, in *CountReq, opts ...grpc.CallOption) (*CountResp, error)
-	Delete(ctx context.Context, in *DeleteReq, opts ...grpc.CallOption) (*DeleteResp, error)
 	Purge(ctx context.Context, in *PurgeReq, opts ...grpc.CallOption) (*PurgeResp, error)
 }
 
@@ -115,6 +117,26 @@ func (c *listClient) Set(ctx context.Context, in *SetReq, opts ...grpc.CallOptio
 	return out, nil
 }
 
+func (c *listClient) Delete(ctx context.Context, in *DeleteReq, opts ...grpc.CallOption) (*DeleteResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteResp)
+	err := c.cc.Invoke(ctx, List_Delete_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *listClient) List(ctx context.Context, in *ListReq, opts ...grpc.CallOption) (*ListResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListResp)
+	err := c.cc.Invoke(ctx, List_List_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *listClient) All(ctx context.Context, in *AllReq, opts ...grpc.CallOption) (*AllResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AllResp)
@@ -129,16 +151,6 @@ func (c *listClient) Count(ctx context.Context, in *CountReq, opts ...grpc.CallO
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CountResp)
 	err := c.cc.Invoke(ctx, List_Count_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *listClient) Delete(ctx context.Context, in *DeleteReq, opts ...grpc.CallOption) (*DeleteResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteResp)
-	err := c.cc.Invoke(ctx, List_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -163,9 +175,10 @@ type ListServer interface {
 	Add(context.Context, *AddReq) (*AddResp, error)
 	Get(context.Context, *GetReq) (*GetResp, error)
 	Set(context.Context, *SetReq) (*SetResp, error)
+	Delete(context.Context, *DeleteReq) (*DeleteResp, error)
+	List(context.Context, *ListReq) (*ListResp, error)
 	All(context.Context, *AllReq) (*AllResp, error)
 	Count(context.Context, *CountReq) (*CountResp, error)
-	Delete(context.Context, *DeleteReq) (*DeleteResp, error)
 	Purge(context.Context, *PurgeReq) (*PurgeResp, error)
 	mustEmbedUnimplementedListServer()
 }
@@ -189,14 +202,17 @@ func (UnimplementedListServer) Get(context.Context, *GetReq) (*GetResp, error) {
 func (UnimplementedListServer) Set(context.Context, *SetReq) (*SetResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
+func (UnimplementedListServer) Delete(context.Context, *DeleteReq) (*DeleteResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedListServer) List(context.Context, *ListReq) (*ListResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
 func (UnimplementedListServer) All(context.Context, *AllReq) (*AllResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method All not implemented")
 }
 func (UnimplementedListServer) Count(context.Context, *CountReq) (*CountResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Count not implemented")
-}
-func (UnimplementedListServer) Delete(context.Context, *DeleteReq) (*DeleteResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedListServer) Purge(context.Context, *PurgeReq) (*PurgeResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Purge not implemented")
@@ -294,6 +310,42 @@ func _List_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _List_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ListServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: List_Delete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ListServer).Delete(ctx, req.(*DeleteReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _List_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ListServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: List_List_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ListServer).List(ctx, req.(*ListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _List_All_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AllReq)
 	if err := dec(in); err != nil {
@@ -326,24 +378,6 @@ func _List_Count_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ListServer).Count(ctx, req.(*CountReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _List_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ListServer).Delete(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: List_Delete_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ListServer).Delete(ctx, req.(*DeleteReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -390,16 +424,20 @@ var List_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _List_Set_Handler,
 		},
 		{
+			MethodName: "Delete",
+			Handler:    _List_Delete_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _List_List_Handler,
+		},
+		{
 			MethodName: "All",
 			Handler:    _List_All_Handler,
 		},
 		{
 			MethodName: "Count",
 			Handler:    _List_Count_Handler,
-		},
-		{
-			MethodName: "Delete",
-			Handler:    _List_Delete_Handler,
 		},
 		{
 			MethodName: "Purge",

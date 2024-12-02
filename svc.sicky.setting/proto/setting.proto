@@ -48,10 +48,7 @@ message SettingDef {
 };
 
 message SetReq { SettingDef setting = 1; };
-message SetResp {
-  string id = 127;
-  bool is_new = 128;
-};
+message SetResp { string id = 127; };
 
 message GetReq {
   string key = 1;

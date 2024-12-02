@@ -35,56 +35,47 @@ service List {
   rpc Add(AddReq) returns (AddResp);
   rpc Get(GetReq) returns (GetResp);
   rpc Set(SetReq) returns (SetResp);
+  rpc Delete(DeleteReq) returns (DeleteResp);
+  rpc List(ListReq) returns (ListResp);
   rpc All(AllReq) returns (AllResp);
   rpc Count(CountReq) returns (CountResp);
-  rpc Delete(DeleteReq) returns (DeleteResp);
   rpc Purge(PurgeReq) returns (PurgeResp);
 };
 
 message InitDBResp { bool result = 1; };
 
-message ListItem {
-  string key = 1;
-  string value = 2;
-  bool is_json = 128;
+message ListDef {
+  string id = 1;
+  string key = 2;
+  string value = 3;
+  bool raw = 4;
+  int64 status = 5;
 };
 
-message AddReq {
-  string key = 1;
-  string value = 2;
-  bool is_json = 128;
-};
+message AddReq { ListDef item = 1; };
 message AddResp { string id = 127; };
 
-message GetReq {
+message GetReq { string id = 127; };
+message GetResp { ListDef item = 1; };
+
+message SetReq { ListDef item = 2; };
+message SetResp { bool set = 1; };
+
+message DeleteReq { string id = 127; };
+message DeleteResp { bool deleted = 1; };
+
+message ListReq {
   string key = 1;
-  string id = 127;
   int64 offset = 254;
   int64 limit = 255;
 };
-message GetResp {
-  repeated AddReq items = 1;
-  int64 total = 127;
-};
-
-message SetReq {
-  string id = 127;
-  string value = 2;
-  bool is_json = 128;
-};
-message SetResp { bool is_set = 128; };
+message ListResp { repeated ListDef items = 1; };
 
 message AllReq { string key = 1; };
-message AllResp {
-  repeated AddReq items = 1;
-  int64 total = 127;
-};
+message AllResp { repeated ListDef items = 1; };
 
 message CountReq { string key = 1; };
-message CountResp { int64 total = 1; };
-
-message DeleteReq { string id = 127; };
-message DeleteResp { bool is_deleted = 128; };
+message CountResp { int64 count = 1; };
 
 message PurgeReq { string key = 1; };
-message PurgeResp { bool is_purged = 128; };
+message PurgeResp { bool purged = 128; };

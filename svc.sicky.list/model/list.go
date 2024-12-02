@@ -32,7 +32,9 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/go-sicky/sicky/driver"
@@ -41,25 +43,187 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type Setting struct {
-	bun.BaseModel `bun:"table:list"`
+type List struct {
+	bun.BaseModel `bun:"table:sicky.list"`
 
-	ID        uuid.UUID       `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
-	Key       string          `bun:"key,notnull" json:"key"`
-	RawValue  []byte          `bun:"raw_value" json:"raw_value"`
-	JsonValue json.RawMessage `bun:"json_value" json:"json_value"`
-	IsJson    bool            `bun:"is_json" json:"is_json"`
-	Status    int64           `bun:"status" json:"status"`
+	ID     uuid.UUID       `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	Key    string          `bun:"key,notnull" json:"key"`
+	Value  json.RawMessage `bun:"value,type:jsonb" json:"value"`
+	Raw    bool            `bun:"raw" json:"raw"`
+	Status int64           `bun:"status" json:"status"`
 
 	CreatedAt time.Time `bun:"created_at,nullzero,notnull,default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at,nullzero,notnull,default:CURRENT_TIMESTAMP" json:"updated_at"`
 	DeletedAt time.Time `bun:"deleted_at,soft_delete,nullzero" json:"-"`
 }
 
+func (m *List) Add(ctx context.Context) error {
+	m.ID = uuid.Nil
+	iq := driver.DB.NewInsert().Model(m)
+	_, err := iq.Returning("*").Exec(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list insert failed", "error", err.Error())
+	}
+
+	return err
+}
+
+func (m *List) Get(ctx context.Context) error {
+	sq := driver.DB.NewSelect().Model((*List)(nil))
+	if m.ID != uuid.Nil {
+		sq = sq.Where("id = ?", m.ID)
+	}
+
+	if m.Key != "" {
+		sq = sq.Where("key = ?", m.Key)
+	}
+
+	err := sq.Limit(1).Scan(ctx, m)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No rows
+			logger.Logger.WarnContext(ctx, "list get no records")
+			m.ID = uuid.Nil
+			m.Key = ""
+
+			return nil
+		} else {
+			logger.Logger.ErrorContext(ctx, "list get failed", "error", err.Error())
+		}
+	}
+
+	return err
+}
+
+func (m *List) Set(ctx context.Context) (int64, error) {
+	uq := driver.DB.NewUpdate().Model((*List)(nil))
+	if m.ID != uuid.Nil {
+		uq = uq.Where("id = ?", m.ID)
+	}
+
+	if m.Key != "" {
+		uq = uq.Where("key = ?", m.Key)
+	}
+
+	if m.Value != nil {
+		uq = uq.Set("value = ?", m.Value).Set("raw = ?", m.Raw)
+	}
+
+	if m.Status != 0 {
+		uq = uq.Set("status = ?", m.Status)
+	}
+
+	r, err := uq.Exec(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list set failed", "error", err.Error())
+
+		return 0, err
+	}
+
+	ra, err := r.RowsAffected()
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list set RowsAffected() failed", "error", err.Error())
+
+		return 0, err
+	}
+
+	return ra, nil
+}
+
+func (m *List) Delete(ctx context.Context) (int64, error) {
+	dq := driver.DB.NewDelete().Model((*List)(nil))
+	if m.ID != uuid.Nil {
+		dq = dq.Where("id = ?", m.ID)
+	}
+
+	if m.Key != "" {
+		dq = dq.Where("key = ?", m.Key)
+	}
+
+	r, err := dq.Exec(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list delete failed", "error", err.Error())
+
+		return 0, err
+	}
+
+	ra, err := r.RowsAffected()
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list delete RowsAffected() failed", "error", err.Error())
+
+		return 0, err
+	}
+
+	return ra, nil
+}
+
+func (m *List) List(ctx context.Context, offset, limit int64) ([]*List, error) {
+	var (
+		items []*List
+	)
+
+	sq := driver.DB.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
+	err := sq.Offset(int(offset)).Limit(int(limit)).Scan(ctx, &items)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list list failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	return items, nil
+}
+
+func (m *List) All(ctx context.Context) ([]*List, error) {
+	var (
+		items []*List
+	)
+
+	sq := driver.DB.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
+	err := sq.Scan(ctx, &items)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list all failed", "error", err.Error())
+
+		return nil, err
+	}
+
+	return items, nil
+}
+
+func (m *List) Count(ctx context.Context) (int64, error) {
+	sq := driver.DB.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
+	c, err := sq.Count(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list count failed", "error", err.Error())
+
+		return 0, err
+	}
+
+	return int64(c), nil
+}
+
+func (m *List) Purge(ctx context.Context) (int64, error) {
+	dq := driver.DB.NewDelete().Model((*List)(nil)).Where("key = ?", m.Key)
+	r, err := dq.Exec(ctx)
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list purge failed", err.Error())
+
+		return 0, err
+	}
+
+	c, err := r.RowsAffected()
+	if err != nil {
+		logger.Logger.ErrorContext(ctx, "list purge RowsAffected() failed", err.Error())
+
+		return 0, err
+	}
+
+	return c, nil
+}
+
 func InitList(ctx context.Context, dropTable bool) error {
 	if dropTable {
 		// Drop exist table
-		_, err := driver.DB.NewDropTable().Model((*Setting)(nil)).Exec(ctx)
+		_, err := driver.DB.NewDropTable().Model((*List)(nil)).Exec(ctx)
 		if err != nil {
 			logger.Logger.ErrorContext(ctx, err.Error())
 
@@ -68,7 +232,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 	}
 
 	// Create table
-	_, err := driver.DB.NewCreateTable().Model((*Setting)(nil)).Exec(ctx)
+	_, err := driver.DB.NewCreateTable().Model((*List)(nil)).Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, err.Error())
 
@@ -77,7 +241,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 
 	// Indexes
 	_, err = driver.DB.NewCreateIndex().
-		Model((*Setting)(nil)).
+		Model((*List)(nil)).
 		Index("idx_list_crated_at").
 		Column("created_at").Exec(ctx)
 	if err != nil {
@@ -87,7 +251,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 	}
 
 	_, err = driver.DB.NewCreateIndex().
-		Model((*Setting)(nil)).
+		Model((*List)(nil)).
 		Index("idx_list_updated_at").
 		Column("updated_at").Exec(ctx)
 	if err != nil {
@@ -97,7 +261,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 	}
 
 	_, err = driver.DB.NewCreateIndex().
-		Model((*Setting)(nil)).
+		Model((*List)(nil)).
 		Index("idx_list_deleted_at").
 		Column("deleted_at").Exec(ctx)
 	if err != nil {
@@ -107,7 +271,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 	}
 
 	_, err = driver.DB.NewCreateIndex().
-		Model((*Setting)(nil)).
+		Model((*List)(nil)).
 		Index("idx_list_key").
 		Column("key").Exec(ctx)
 	if err != nil {
@@ -115,6 +279,8 @@ func InitList(ctx context.Context, dropTable bool) error {
 
 		return err
 	}
+
+	logger.Logger.InfoContext(ctx, "table <sicky.list> initialized")
 
 	return err
 }
