@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	AppName = "svc.sicky.setting"
+	AppName = "svc.sicky.common"
 	Version = "latest"
 )
 

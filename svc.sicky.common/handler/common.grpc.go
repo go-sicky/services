@@ -36,10 +36,11 @@ import (
 	"github.com/go-sicky/services/svc.sicky.common/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type GRPCCommon struct {
-	proto.UnsafeCommonServer
+	proto.UnimplementedCommonServer
 }
 
 func NewGRPCCommon() *GRPCCommon {
@@ -64,6 +65,14 @@ func (h *GRPCCommon) Register(app *grpc.Server) {
 func (h *GRPCCommon) Health(ctx context.Context, req *emptypb.Empty) (*proto.HealthResp, error) {
 	resp := &proto.HealthResp{
 		Status: "OK",
+	}
+
+	return resp, nil
+}
+
+func (h *GRPCCommon) Now(ctx context.Context, req *emptypb.Empty) (*proto.NowResp, error) {
+	resp := &proto.NowResp{
+		Now: timestamppb.Now(),
 	}
 
 	return resp, nil
