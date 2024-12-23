@@ -50,7 +50,8 @@ const (
 func main() {
 	// Runtime
 	runtime.Init(AppName)
-	runtime.Config.Unmarshal(&config)
+	runtime.LoadConfig(&config)
+	runtime.Start(config.Runtime)
 
 	// Logger
 	logger.Logger.Level(logger.DebugLevel)
