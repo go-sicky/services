@@ -242,7 +242,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 	// Indexes
 	_, err = driver.DB.NewCreateIndex().
 		Model((*List)(nil)).
-		Index("idx_list_crated_at").
+		Index("idx_list_created_at").
 		Column("created_at").Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, err.Error())
