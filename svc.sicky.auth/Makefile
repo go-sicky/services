@@ -1,6 +1,9 @@
-PROJECT				:= svc.sicky.common
+# Makefile
+
+PROJECT				:= svc.sicky.auth
 PREFIX				:= $(shell pwd)
 VERSION				:= $(shell git describe --match 'v[0-9]*'  --always 2>/dev/null || echo "unknown")
+#DEFAULT_BRANCH		:= $(shell git symbolic-ref --short -q HEAD)
 DEFAULT_BRANCH		:= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
 COMMIT_SHA			:= $(shell git rev-parse --short HEAD 2>/dev/null || echo "0000000")
 BUILD_TIME			:= $(shell date +'%Y-%m-%d_%H:%M:%S')
@@ -89,7 +92,7 @@ summary:
 	@printf "    Target Arch : \033[1;37m$(ARCH)\033[0m\n"
 	@printf "    Go          : \033[1;37m`$(GO) version`\033[0m\n"
 	@printf "    Docker      : \033[1;37m`$(DOCKER) -v`\033[0m\n"
-	@printf "    Git         : \033[1;37m$(shell git version)\033[0m\n"
+	@printf "    Git         : \033[1;37m$(GIT_VERSION)\033[0m\n"
 	@printf "    Branch      : \033[1;37m$(BRANCH)\033[0m\n"
 	@printf "    Commit      : \033[1;37m$(COMMIT_SHA)\033[0m\n"
 	@printf "    Version     : \033[1;37m$(VERSION)\033[0m\n"
@@ -122,7 +125,7 @@ build:
 
 test:
 	@$(GO) clean --testcache
-	@GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 $(GO) test ${SOURCE_DIR}/internal/generator --cover -v
+	@GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 $(GO) test ${SOURCE_DIR}/... --cover -v
 	@echo
 
 upgrade:

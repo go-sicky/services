@@ -37,7 +37,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-sicky/sicky/driver"
+	"github.com/go-sicky/sicky/infra"
 	"github.com/go-sicky/sicky/logger"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -57,7 +57,7 @@ type Setting struct {
 }
 
 func (m *Setting) Set(ctx context.Context) error {
-	iq := driver.DB.NewInsert().Model(m).
+	iq := infra.Bun.NewInsert().Model(m).
 		On("CONFLICT (key) DO UPDATE").
 		Set("value = COALESCE(EXCLUDED.value, setting.value), raw = COALESCE(EXCLUDED.raw, setting.raw), status = COALESCE(EXCLUDED.status, setting.status), updated_at = CURRENT_TIMESTAMP")
 
@@ -70,7 +70,7 @@ func (m *Setting) Set(ctx context.Context) error {
 }
 
 func (m *Setting) Get(ctx context.Context) error {
-	sq := driver.DB.NewSelect().Model((*Setting)(nil))
+	sq := infra.Bun.NewSelect().Model((*Setting)(nil))
 	if m.ID != uuid.Nil {
 		sq = sq.Where("id = ?", m.ID)
 	}
@@ -97,7 +97,7 @@ func (m *Setting) Get(ctx context.Context) error {
 }
 
 func (m *Setting) Delete(ctx context.Context) error {
-	dq := driver.DB.NewDelete().Model((*Setting)(nil))
+	dq := infra.Bun.NewDelete().Model((*Setting)(nil))
 	if m.ID != uuid.Nil {
 		dq = dq.Where("id = ?", m.ID)
 	}
@@ -124,7 +124,7 @@ func (m *Setting) Delete(ctx context.Context) error {
 func InitSetting(ctx context.Context, dropTable bool) error {
 	if dropTable {
 		// Drop exist table
-		_, err := driver.DB.NewDropTable().Model((*Setting)(nil)).Exec(ctx)
+		_, err := infra.Bun.NewDropTable().Model((*Setting)(nil)).Exec(ctx)
 		if err != nil {
 			logger.Logger.ErrorContext(ctx, err.Error())
 
@@ -133,7 +133,7 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 	}
 
 	// Create table
-	_, err := driver.DB.NewCreateTable().Model((*Setting)(nil)).Exec(ctx)
+	_, err := infra.Bun.NewCreateTable().Model((*Setting)(nil)).Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, err.Error())
 
@@ -141,7 +141,7 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 	}
 
 	// Indexes
-	_, err = driver.DB.NewCreateIndex().
+	_, err = infra.Bun.NewCreateIndex().
 		Model((*Setting)(nil)).
 		Index("idx_sicky_setting_crated_at").
 		Column("created_at").Exec(ctx)
@@ -151,7 +151,7 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 		return err
 	}
 
-	_, err = driver.DB.NewCreateIndex().
+	_, err = infra.Bun.NewCreateIndex().
 		Model((*Setting)(nil)).
 		Index("idx_sicky_setting_updated_at").
 		Column("updated_at").Exec(ctx)
@@ -162,7 +162,7 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 	}
 
 	// Unique
-	_, err = driver.DB.NewCreateIndex().
+	_, err = infra.Bun.NewCreateIndex().
 		Model((*Setting)(nil)).
 		Unique().
 		Index("unq_sicky_setting_key").
@@ -175,7 +175,7 @@ func InitSetting(ctx context.Context, dropTable bool) error {
 	}
 
 	// Gin
-	_, err = driver.DB.NewCreateIndex().
+	_, err = infra.Bun.NewCreateIndex().
 		Model((*Setting)(nil)).
 		Using("gin").
 		Index("gin_sicky_setting_value").

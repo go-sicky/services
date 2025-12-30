@@ -37,7 +37,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-sicky/sicky/driver"
+	"github.com/go-sicky/sicky/infra"
 	"github.com/go-sicky/sicky/logger"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -59,7 +59,7 @@ type List struct {
 
 func (m *List) Add(ctx context.Context) error {
 	m.ID = uuid.Nil
-	iq := driver.DB.NewInsert().Model(m)
+	iq := infra.Bun.NewInsert().Model(m)
 	_, err := iq.Returning("*").Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, "list insert failed", "error", err.Error())
@@ -69,7 +69,7 @@ func (m *List) Add(ctx context.Context) error {
 }
 
 func (m *List) Get(ctx context.Context) error {
-	sq := driver.DB.NewSelect().Model((*List)(nil))
+	sq := infra.Bun.NewSelect().Model((*List)(nil))
 	if m.ID != uuid.Nil {
 		sq = sq.Where("id = ?", m.ID)
 	}
@@ -96,7 +96,7 @@ func (m *List) Get(ctx context.Context) error {
 }
 
 func (m *List) Set(ctx context.Context) (int64, error) {
-	uq := driver.DB.NewUpdate().Model((*List)(nil))
+	uq := infra.Bun.NewUpdate().Model((*List)(nil))
 	if m.ID != uuid.Nil {
 		uq = uq.Where("id = ?", m.ID)
 	}
@@ -131,7 +131,7 @@ func (m *List) Set(ctx context.Context) (int64, error) {
 }
 
 func (m *List) Delete(ctx context.Context) (int64, error) {
-	dq := driver.DB.NewDelete().Model((*List)(nil))
+	dq := infra.Bun.NewDelete().Model((*List)(nil))
 	if m.ID != uuid.Nil {
 		dq = dq.Where("id = ?", m.ID)
 	}
@@ -158,11 +158,9 @@ func (m *List) Delete(ctx context.Context) (int64, error) {
 }
 
 func (m *List) List(ctx context.Context, offset, limit int64) ([]*List, error) {
-	var (
-		items []*List
-	)
+	var items []*List
 
-	sq := driver.DB.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
+	sq := infra.Bun.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
 	err := sq.Offset(int(offset)).Limit(int(limit)).Scan(ctx, &items)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, "list list failed", "error", err.Error())
@@ -174,11 +172,9 @@ func (m *List) List(ctx context.Context, offset, limit int64) ([]*List, error) {
 }
 
 func (m *List) All(ctx context.Context) ([]*List, error) {
-	var (
-		items []*List
-	)
+	var items []*List
 
-	sq := driver.DB.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
+	sq := infra.Bun.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
 	err := sq.Scan(ctx, &items)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, "list all failed", "error", err.Error())
@@ -190,7 +186,7 @@ func (m *List) All(ctx context.Context) ([]*List, error) {
 }
 
 func (m *List) Count(ctx context.Context) (int64, error) {
-	sq := driver.DB.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
+	sq := infra.Bun.NewSelect().Model((*List)(nil)).Where("key = ?", m.Key)
 	c, err := sq.Count(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, "list count failed", "error", err.Error())
@@ -202,7 +198,7 @@ func (m *List) Count(ctx context.Context) (int64, error) {
 }
 
 func (m *List) Purge(ctx context.Context) (int64, error) {
-	dq := driver.DB.NewDelete().Model((*List)(nil)).Where("key = ?", m.Key)
+	dq := infra.Bun.NewDelete().Model((*List)(nil)).Where("key = ?", m.Key)
 	r, err := dq.Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, "list purge failed", err.Error())
@@ -223,7 +219,7 @@ func (m *List) Purge(ctx context.Context) (int64, error) {
 func InitList(ctx context.Context, dropTable bool) error {
 	if dropTable {
 		// Drop exist table
-		_, err := driver.DB.NewDropTable().Model((*List)(nil)).Exec(ctx)
+		_, err := infra.Bun.NewDropTable().Model((*List)(nil)).Exec(ctx)
 		if err != nil {
 			logger.Logger.ErrorContext(ctx, err.Error())
 
@@ -232,7 +228,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 	}
 
 	// Create table
-	_, err := driver.DB.NewCreateTable().Model((*List)(nil)).Exec(ctx)
+	_, err := infra.Bun.NewCreateTable().Model((*List)(nil)).Exec(ctx)
 	if err != nil {
 		logger.Logger.ErrorContext(ctx, err.Error())
 
@@ -240,7 +236,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 	}
 
 	// Indexes
-	_, err = driver.DB.NewCreateIndex().
+	_, err = infra.Bun.NewCreateIndex().
 		Model((*List)(nil)).
 		Index("idx_list_created_at").
 		Column("created_at").Exec(ctx)
@@ -250,7 +246,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 		return err
 	}
 
-	_, err = driver.DB.NewCreateIndex().
+	_, err = infra.Bun.NewCreateIndex().
 		Model((*List)(nil)).
 		Index("idx_list_updated_at").
 		Column("updated_at").Exec(ctx)
@@ -260,7 +256,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 		return err
 	}
 
-	_, err = driver.DB.NewCreateIndex().
+	_, err = infra.Bun.NewCreateIndex().
 		Model((*List)(nil)).
 		Index("idx_list_deleted_at").
 		Column("deleted_at").Exec(ctx)
@@ -270,7 +266,7 @@ func InitList(ctx context.Context, dropTable bool) error {
 		return err
 	}
 
-	_, err = driver.DB.NewCreateIndex().
+	_, err = infra.Bun.NewCreateIndex().
 		Model((*List)(nil)).
 		Index("idx_list_key").
 		Column("key").Exec(ctx)

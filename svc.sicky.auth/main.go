@@ -25,7 +25,7 @@
  * @file main.go
  * @package main
  * @author Dr.NP <np@herewe.tech>
- * @since 09/18/2024
+ * @since 12/28/2025
  */
 
 package main
@@ -33,16 +33,15 @@ package main
 import (
 	"context"
 
-	"github.com/go-sicky/services/svc.sicky.list/handler"
 	"github.com/go-sicky/sicky"
 	"github.com/go-sicky/sicky/server"
-	srvGRPC "github.com/go-sicky/sicky/server/grpc"
+	grpcSrv "github.com/go-sicky/sicky/server/grpc"
 	"github.com/go-sicky/sicky/service"
 	"github.com/go-sicky/sicky/service/standard"
 )
 
 var (
-	AppName   = "svc.sicky.list"
+	AppName   = "svc.sicky.auth"
 	Version   = "latest"
 	Branch    = "main"
 	Commit    = ""
@@ -63,24 +62,10 @@ func main() {
 		},
 		&config,
 	)
-
-	// GRPC server
-	grpcSrv := srvGRPC.New(
-		&server.Options{
-			Name:    AppName + "@grpc",
-			Context: ctx,
-		}, config.Server.GRPC,
-	)
-	grpcSrv.Handle(handler.NewGRPCList())
-
-	// Service
-	svc := standard.New(
-		&service.Options{
-			Name:    AppName,
-			Context: ctx,
-		}, config.Service,
-	)
-	svc.Servers(grpcSrv)
+	grpc := grpcSrv.New(&server.Options{Context: ctx}, config.Srv)
+	grpc.Handle()
+	svc := standard.New(&service.Options{Context: ctx}, config.Service)
+	svc.Servers(grpc)
 
 	sicky.Run(config.Sicky)
 }

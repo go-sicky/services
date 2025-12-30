@@ -31,48 +31,60 @@
 package main
 
 import (
+	"context"
+
 	"github.com/go-sicky/services/svc.sicky.common/handler"
-	brkNats "github.com/go-sicky/sicky/broker/nats"
-	"github.com/go-sicky/sicky/logger"
-	rgConsul "github.com/go-sicky/sicky/registry/consul"
-	"github.com/go-sicky/sicky/runtime"
+	"github.com/go-sicky/sicky"
 	"github.com/go-sicky/sicky/server"
 	srvGRPC "github.com/go-sicky/sicky/server/grpc"
 	"github.com/go-sicky/sicky/service"
-	"github.com/go-sicky/sicky/service/sicky"
+	"github.com/go-sicky/sicky/service/standard"
 )
 
-const (
-	AppName = "svc.sicky.common"
-	Version = "latest"
+var (
+	AppName   = "svc.sicky.common"
+	Version   = "latest"
+	Branch    = "main"
+	Commit    = ""
+	BuildTime = ""
 )
 
 func main() {
-	// Runtime
-	runtime.Init(AppName)
-	runtime.LoadConfig(&config)
-	runtime.Start(config.Runtime)
+	ctx := context.Background()
 
-	// Logger
-	logger.Logger.Level(logger.DebugLevel)
+	// Sicky
+	sicky.Init(
+		&sicky.Options{
+			AppName:   AppName,
+			Version:   Version,
+			Branch:    Branch,
+			Commit:    Commit,
+			BuildTime: BuildTime,
+			Context:   ctx,
+		},
+		&config,
+	)
 
 	// GRPC server
-	grpcSrv := srvGRPC.New(&server.Options{Name: AppName + "@grpc"}, config.Server.GRPC)
+	grpcSrv := srvGRPC.New(
+		&server.Options{
+			Name:    AppName + "@grpc",
+			Context: ctx,
+		}, config.Server.GRPC,
+	)
 	grpcSrv.Handle(handler.NewGRPCCommon())
 
-	// Broker
-	brkNats := brkNats.New(nil, config.Broker.Nats)
-
-	// Registry
-	rgConsul := rgConsul.New(nil, config.Registry.Consul)
-
 	// Service
-	svc := sicky.New(&service.Options{Name: AppName}, config.Service)
-	svc.Servers(grpcSrv)
-	svc.Brokers(brkNats)
-	svc.Registries(rgConsul)
+	svc := standard.New(
+		&service.Options{
+			Name:    AppName,
+			Context: ctx,
+		}, config.Service,
+	)
 
-	service.Run()
+	svc.Servers(grpcSrv)
+
+	sicky.Run(config.Sicky)
 }
 
 /*
