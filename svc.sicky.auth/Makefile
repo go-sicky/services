@@ -2,8 +2,7 @@
 
 PROJECT				:= svc.sicky.auth
 PREFIX				:= $(shell pwd)
-VERSION				:= $(shell git describe --match 'v[0-9]*'  --always 2>/dev/null || echo "unknown")
-#DEFAULT_BRANCH		:= $(shell git symbolic-ref --short -q HEAD)
+VERSION				:= $(shell [ -s VERSION ] && head -n 1 VERSION || echo latest)
 DEFAULT_BRANCH		:= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
 COMMIT_SHA			:= $(shell git rev-parse --short HEAD 2>/dev/null || echo "0000000")
 BUILD_TIME			:= $(shell date +'%Y-%m-%d_%H:%M:%S')

@@ -61,8 +61,8 @@ func main() {
 			BuildTime: BuildTime,
 			Context:   ctx,
 		},
-		&config,
 	)
+	sicky.ConfigUnmarshal(&config)
 
 	// GRPC server
 	grpcSrv := srvGRPC.New(

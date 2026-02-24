@@ -50,7 +50,6 @@ var (
 
 func main() {
 	ctx := context.Background()
-
 	sicky.Init(
 		&sicky.Options{
 			AppName:   AppName,
@@ -60,8 +59,8 @@ func main() {
 			BuildTime: BuildTime,
 			Context:   ctx,
 		},
-		&config,
 	)
+	sicky.ConfigUnmarshal(&config)
 	grpc := grpcSrv.New(&server.Options{Context: ctx}, config.Srv)
 	grpc.Handle()
 	svc := standard.New(&service.Options{Context: ctx}, config.Service)
